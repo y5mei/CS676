@@ -66,7 +66,7 @@ def binomial_lattice_pricing(opttype:int = 0, dividendtype:int = 0, rho:float = 
 
     # Define the smoothed payoff function here:
     # given a stock price, s, return the smoothed payoff function value
-    def smoothed_pay_off(s: float) -> float:
+    def smoothed_pay_off_for_put(s: float) -> float:
         if s*math.exp(-sigma*math.sqrt(delta)) > K:
             return 0
         elif s*math.exp(sigma*math.sqrt(delta)) < K:
@@ -77,14 +77,25 @@ def binomial_lattice_pricing(opttype:int = 0, dividendtype:int = 0, rho:float = 
             renomalized_stock = s*(K/s-math.exp(-sigma*math.sqrt(delta)))
             return renomalized_factor*(renomalized_strike-renomalized_stock)
 
+    def smoothed_pay_off_for_call(s: float) -> float:
+        if s*math.exp(sigma*math.sqrt(delta)) < K:
+            return 0
+        elif s*math.exp(-sigma*math.sqrt(delta)) > K:
+            return -K + s*(math.exp(sigma*math.sqrt(delta))-math.exp(-sigma*math.sqrt(delta)))/(2*sigma*math.sqrt(delta))
+        else:
+            renomalized_factor = 1/(2*sigma*math.sqrt(delta))
+            renomalized_strike = K*(-math.log(K/s)+sigma*math.sqrt(delta))
+            renomalized_stock = s*(-K/s+math.exp(sigma*math.sqrt(delta)))
+            return renomalized_factor*(-renomalized_strike+renomalized_stock)
+
     if opttype == 0:
         # if this is a call option
         # print("This is a call option")
-        raise Exception('Call Option is not implemented for this question!!!')
+        W = list(map(smoothed_pay_off_for_call, W))
     else:
         # if this is a put option
         # print("This is a put option")
-        W = list(map(smoothed_pay_off, W))
+        W = list(map(smoothed_pay_off_for_put, W))
 
     # Backward recursion
 
@@ -130,7 +141,7 @@ bsm_put = op.black_scholes(K=10, St=10, r=3, t=365, v=20, type='p')
 print("blsprice put option value is:",bsm_put['value']["option value"])  # The standard blsprice put value should be 0.6457956738703823
 
 print("===============================================================================================")
-print("========================== My Calculation for Put Option ======================================")
+print("================ My Calculation for Put Option after smooth function===========================")
 print("================================== No Dividend  ================================================")
 delta_t_list = []
 value_list = []
@@ -157,18 +168,18 @@ put_option_dict = {'Delta_t': delta_t_list, 'Value': value_list, 'Change': chang
 df = pd.DataFrame(put_option_dict)
 print(df)
 df.to_csv("put_option_no_dividend_smoothed_drifting.csv")
-# print("===============================================================================================")
-#
-# print("===============================================================================================")
-# print("==========================          Assignment Q1-(b)     =====================================")
-# print("===============================================================================================")
-# rho_list = [0, 0.02, 0.04, 0.08]
-# call_option_values_list = []
-# put_option_values_list = []
-# for rho in rho_list:
-#     call_option_values_list.append(binomial_lattice_pricing(opttype=0, dividendtype=1, delta=0.005, rho = rho))
-#     put_option_values_list.append(binomial_lattice_pricing(opttype=1, dividendtype=1, delta=0.005, rho=rho))
-#
-# question2_result_dict = {'Rho': rho_list, "Call_Value": call_option_values_list, "Put_Value": put_option_values_list}
-# df = pd.DataFrame(question2_result_dict)
-# print(df)
+print("===============================================================================================")
+
+print("===============================================================================================")
+print("==========================          Assignment Q2-(b)     =====================================")
+print("===============================================================================================")
+rho_list = [0, 0.02, 0.04, 0.08]
+call_option_values_list = []
+put_option_values_list = []
+for rho in rho_list:
+    call_option_values_list.append(binomial_lattice_pricing(opttype=0, dividendtype=1, delta=0.005, rho = rho))
+    put_option_values_list.append(binomial_lattice_pricing(opttype=1, dividendtype=1, delta=0.005, rho=rho))
+
+question2_result_dict = {'Rho': rho_list, "Call_Value": call_option_values_list, "Put_Value": put_option_values_list}
+df = pd.DataFrame(question2_result_dict)
+print(df)
